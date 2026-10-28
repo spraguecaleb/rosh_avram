@@ -2,28 +2,101 @@ from flask import Flask, render_template_string, request, jsonify
 
 app = Flask(__name__)
 
-# A simple HTML/JS frontend embedded right into Flask for maximum speed
+# AVRAM Prototype Frontend Template with brand styling
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Flask Prototype Chat</title>
+    <title>AVRAM — Ancient Wisdom. A Companion for Life.</title>
     <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f4f4f9; }
-        #chat-box { background: white; height: 300px; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-        .message { margin-bottom: 10px; }
-        .user { color: blue; }
-        .bot { color: green; }
-        input[type="text"] { width: 80%; padding: 8px; }
-        button { padding: 8px 15px; }
+        :root {
+            --olive: #39483B;
+            --parchment: #F3E9D5;
+            --gold: #B89352;
+            --charcoal: #252B29;
+            --sandstone: #C8A77A;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--parchment);
+            color: var(--charcoal);
+            max-width: 680px;
+            margin: 30px auto;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        h1 { margin: 0; font-size: 1.8rem; color: var(--olive); letter-spacing: 0.5px; }
+        p.tagline { margin: 5px 0 0; font-style: italic; color: #555; font-size: 0.95rem; }
+
+        #chat-box {
+            background: #ffffff;
+            height: 380px;
+            border: 1px solid var(--sandstone);
+            overflow-y: scroll;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .message { margin-bottom: 15px; line-height: 1.4; }
+        .user-msg { text-align: right; color: #2c3e50; }
+        .user-msg span { background: #e2e8f0; padding: 8px 12px; border-radius: 8px; display: inline-block; text-align: left; }
+
+        .avram-msg { text-align: left; color: var(--charcoal); }
+        .avram-msg span { background: #fdfbf7; border-left: 3px solid var(--olive); padding: 10px 14px; border-radius: 0 8px 8px 0; display: inline-block; }
+
+        .input-group { display: flex; gap: 10px; }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid var(--sandstone);
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: var(--olive); }
+        button {
+            background-color: var(--olive);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #2c362b; }
+        footer { text-align: center; font-size: 0.8rem; color: #777; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h2>🚀 Quick Flask Chat Prototype</h2>
-    <div id="chat-box"></div>
-    <input type="text" id="user-input" placeholder="Type a message..." onkeypress="handleKey(event)">
-    <button onclick="sendMessage()">Send</button>
+
+    <header>
+        <h1>AVRAM</h1>
+        <p class="tagline">Ancient Wisdom. A Companion for Life.</p>
+    </header>
+
+    <div id="chat-box">
+        <div class="message avram-msg">
+            <span>Shalom. What is on your heart today? We can explore the Scriptures together, reflect on what you're facing, or walk the ancient paths.</span>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="user-input" placeholder="Ask a question or share what you're facing..." onkeypress="handleKey(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <footer>
+        AVRAM Prototype &bull; Grounded in Covenant & Scripture
+    </footer>
 
     <script>
         async function sendMessage() {
@@ -32,26 +105,34 @@ HTML_TEMPLATE = """
             const text = input.value.trim();
             if (!text) return;
 
-            // Append user message
-            chatBox.innerHTML += `<div class="message"><span class="user">You:</span> ${text}</div>`;
+            // Append User Message
+            chatBox.innerHTML += `<div class="message user-msg"><span>${escapeHtml(text)}</span></div>`;
             input.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // Send to Flask backend
-            const response = await fetch('/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text })
-            });
-            const data = await response.json();
+            // Send to Backend
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+                const data = await response.json();
 
-            // Append bot reply
-            chatBox.innerHTML += `<div class="message"><span class="bot">Bot:</span> ${data.reply}</div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
+                // Append AVRAM Response
+                chatBox.innerHTML += `<div class="message avram-msg"><span>${escapeHtml(data.reply)}</span></div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (err) {
+                chatBox.innerHTML += `<div class="message avram-msg" style="color: red;"><span>Connection error. Please try again.</span></div>`;
+            }
         }
 
         function handleKey(e) {
             if (e.key === 'Enter') sendMessage();
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
     </script>
 </body>
@@ -67,12 +148,17 @@ def index():
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
-    user_message = data.get("message", "")
+    user_message = data.get("message", "").strip()
 
-    # Simple echo/mock response logic (replace this with OpenAI, etc. later)
-    bot_reply = f"I received your message: '{user_message}'. This is a prototype response!"
+    # Placeholder logic for prototype phase to reflect expected voice/tone guidelines
+    if "forgive" in user_message.lower():
+        reply = "Forgiveness can be difficult, especially when the hurt is deep. Would you like to explore what Scripture teaches about forgiveness, and how it differs from excusing wrongdoing or immediately restoring trust?"
+    elif "sabbath" in user_message.lower():
+        reply = "The Sabbath originates in the creation account and is established as a covenant sign. Christian traditions differ in how they understand observance today, focusing on its core purpose: rest, holiness, and remembrance."
+    else:
+        reply = f"Thank you for sharing that. In exploring '{user_message}', we look to Scripture to ground our understanding. How can we reflect on this together through wisdom (Chochmah) and understanding (Binah)?"
 
-    return jsonify({"reply": bot_reply})
+    return jsonify({"reply": reply})
 
 
 if __name__ == "__main__":
